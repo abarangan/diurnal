@@ -119,7 +119,24 @@ function suntime_publish() {
 	}
 }
 
+function suntime_change_to_night() {
+    var newimgsrc = 'images/glacier_night.jpg?' + (new Date().getTime());
+    var newimg = $('#html');
+    //replace the image
+	$("html").css("background", "url("+newimgsrc+") no-repeat center center fixed");
+	newimg.css({'background': 'url('+newimgsrc+')', '-webkit-background-size': 'cover', '-moz-background-size': 'cover', '-o-background-size': 'cover', 'background-size': 'cover'});
+	newimg.show();
+}
 
+function suntime_change_to_day() {
+    var newimgsrc = 'images/glacier.jpg?' + (new Date().getTime());
+    var newimg = $('#html');
+    //replace the image
+	$("html").css("background", "url("+newimgsrc+") no-repeat center center fixed");
+	newimg.css({'background': 'url('+newimgsrc+')', '-webkit-background-size': 'cover', '-moz-background-size': 'cover', '-o-background-size': 'cover', 'background-size': 'cover'});
+	newimg.show();
+
+}
 
 //---------------------
 //Function: suntime_update_sun_values
@@ -135,10 +152,12 @@ function suntime_update_values(latitude, longitude) {
 	//if the sun is out now
 	if((current_time < suncalc_times.sunset)&&(current_time > suncalc_times.sunrise)) {
 		Run_direction = CLOCK_PHASE.DAY;
+		suntime_change_to_day();
 	}
 	//else the sun has set
 	else {
 		Run_direction = CLOCK_PHASE.NIGHT;
+		suntime_change_to_night();
 
 		//if it's before midnight, we need to look at "tomorrow's" sunrise
     	if(current_time.getHours() > 12) {
@@ -192,6 +211,7 @@ function suntime_calc(now, sunrise, sunset, direction) {
 function time_format(date_val) {
 	return date_val.getHours() + ':' + date_val.getMinutes();
 }
+
 
 $(document).ready(function() {
 	var now = new Date();
