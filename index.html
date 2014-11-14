@@ -2,7 +2,11 @@
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<title>Suntime</title>
+<title>Diurnal Time</title>
+
+<link href='http://fonts.googleapis.com/css?family=Lato&subset=latin,latin-ext' rel='stylesheet' type='text/css'>
+<link href='http://fonts.googleapis.com/css?family=PT+Serif' rel='stylesheet' type='text/css'>
+
 <style type="text/css">
 html { 
   background: url(images/glacier.jpg) no-repeat center center fixed; 
@@ -17,7 +21,6 @@ body{
 	 margin:0;
 	 padding:0;
 	 min-width:960px;
-	 color:#bbbbbb; 
 }
 
 a { 
@@ -49,11 +52,11 @@ h2, p {
 
 @font-face {
     font-family: 'BebasNeueRegular';
-    src: url('BebasNeue-webfont.eot');
-    src: url('BebasNeue-webfont.eot?#iefix') format('embedded-opentype'),
-         url('BebasNeue-webfont.woff') format('woff'),
-         url('BebasNeue-webfont.ttf') format('truetype'),
-         url('BebasNeue-webfont.svg#BebasNeueRegular') format('svg');
+    src: url('BebasNeue/BebasNeue-webfont.eot');
+    src: url('BebasNeue/BebasNeue-webfont.eot?#iefix') format('embedded-opentype'),
+         url('BebasNeue/BebasNeue-webfont.woff') format('woff'),
+         url('BebasNeue/BebasNeue-webfont.ttf') format('truetype'),
+         url('BebasNeue/BebasNeue-webfont.svg#BebasNeueRegular') format('svg');
     font-weight: normal;
     font-style: normal;
 
@@ -63,11 +66,63 @@ h2, p {
 
 .clock {width:700px; margin:0 auto; padding:10px; border:1px solid #fff; color:#fff; }
 
+.tab_contain {
+	width:720px; 
+	margin:0 auto; 
+	padding:0px; 
+}
+
+#tabs { 
+    background: transparent; 
+    border: none; 
+} 
+
+#tabs .ui-widget-header { 
+    background: transparent; 
+    border: none; 
+    border-bottom: 0px solid #fff; 
+    -moz-border-radius: 0px; 
+    -webkit-border-radius: 0px; 
+    border-radius: 0px; 
+} 
+
+#tabs .ui-tabs-nav .ui-state-default { 
+    background: transparent; 
+    border: none; 
+} 
+
+#tabs .ui-tabs-nav .ui-state-active { 
+    background: transparent; 
+    border: none; 
+} 
+
+#tabs .ui-tabs-nav .ui-state-default a { 
+    color: #fff; 
+} 
+
+#tabs .ui-tabs-nav .ui-state-active a { 
+    color: #8b8b8b; 
+}
+
+#tabs .ui-tabs-panel {
+	background: #fff;
+	/* Fallback for web browsers that don't support RGBa */
+    background-color: rgb(0, 0, 0);
+    /* RGBa with 0.6 opacity */
+    background-color: rgba(255, 255, 255, 0.6);	
+	border-width: 2px 1px 1px 1px;
+	font-weight: normal;
+	font-family: 'Lato';
+	font-size: 15px
+}
+
+
 #Date { font-family:'BebasNeueRegular', Arial, Helvetica, sans-serif; font-size:36px; text-align:center; text-shadow:0 0 0px #00c6ff; }
 
 ul { width:700px; margin:0 auto; padding:0px; list-style:none; text-align:center; }
-ul li { display:inline; font-size:10em; text-align:center; font-family:'BebasNeueRegular', Arial, Helvetica, sans-serif; text-shadow:0 0 0px #00c6ff; }
+ul#suntime li { display:inline; font-size:10em; text-align:center; font-family:'BebasNeueRegular', Arial, Helvetica, sans-serif; text-shadow:0 0 0px #00c6ff; }
 
+ul#textarea li { font-size: 13px; font-family:'Lato'; text-align:center; color:#000}
 #point { position:relative; -moz-animation:mymove 1s ease infinite; -webkit-animation:mymove 1s ease infinite; padding-left:10px; padding-right:10px; }
 
 @-webkit-keyframes mymove 
@@ -85,32 +140,96 @@ ul li { display:inline; font-size:10em; text-align:center; font-family:'BebasNeu
 100% {opacity:1.0; text-shadow:0 0 0px #00c6ff; }	
 }
 
+my-ema::after {
+	content: attr(data-dom);
+}
+
+my-ema::before {
+	content: attr(data-man) "\0040";
+}
+
 </style>
 
-<script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=false"></script>
+  <link rel="stylesheet" href="http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css" />
+  <script src="http://code.jquery.com/jquery-1.9.1.js"></script>
+  <script src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
+
+<script>
+	$(function() {
+    	$( "#tabs" ).tabs({
+			active: false,
+			collapsible: true,
+			show: { effect: "fade", duration: 100 },
+			hide: { effect: "fade", duration: 100 }  		
+});
+	});
+
+</script>
+
 
 </head>
 
 <body>
 
-<div class="container">
-<div class="clock">
-	<p id="demo"></p>
-	<p id="GeoText"></p>
-<ul>
-    <li id="dir"> </li>
-    <li id="hours"> </li>
-    <li id="point">:</li>
-    <li id="min"> </li>
-    <li id="point">:</li>
-    <li id="sec"> </li>
+	<div class="container">
+		<div class="clock">
+			<p id="demo"></p>
+			<p id="GeoText"></p>
+			
+			<ul id="suntime">
+    			<li id="dir"> </li>
+    			<li id="hours"> </li>
+   				<li id="point">:</li>
+    			<li id="min"> </li>
+    			<li id="point">:</li>
+    			<li id="sec"> </li>
+			</ul>
+		</div>
+	
+		<div class="tab_contain">
+			<div id="tabs">	
+        		<ul id="textarea">
+            		<li><a href="#exp">Explanation</a></li>
+            		<li><a href="#motiv">Motivation</a></li>
+            		<li><a href="#contact">Contact</a></li>
+        		</ul>
+            	<div id="exp">
+					<div class="tab-closed">
+                	<p>Diurnal Time is always calculated with respect to the sunrise in the place you are located.  During the day, DT will be a positive number representing how many minutes it's been since the sunrise.  After the sun sets, DT will be a negative number representing the number of minutes until the sun rises again.</p>
+					</div>
+            	</div>
+            	<div id="motiv">
+					<div class="tab-closed">
+                	<p>With more than 11,000 years of Civilization behind us, we live today in a world filled with legacy.  Some of those things we borrow from history make our lives easier as they prevent us from needing to reinvent techniques and processes.  Other elements pose serious challenges to our daily lives as the world we live in today is vastly different from the world that existed just 10 years ago.  This is evident within everything from the ways we work, to our methods of communication, to the foods we eat.  The technologies of modern life have emphasized and expedited the dynamic and ever-changing aspects of human culture.</p>
 
-</ul>
+					<p>One important piece of that legacy is our concept of time.  In 1847, Greenwich Mean Time (GMT) became a standard across Great Britain with the goal of synchronizing clocks for maritime and railroad use-- essentially, through capitalist motivations.  This eventually became a standard for time that was used all over the world.  In 1960, an international communications committee defined Coordinated Universal Time (UTC) in an attempt to improve precision by leveraging the newly-invented caesium atomic clock rather than basing time on astronomical observations.  All of the time zones on Earth are now based with respect to Universal Time.</p>
 
-</div>
-</div>
+					<p>With this in mind, what are the compromises that we make as we govern our lives within the existing time standards?  What are the ways that certain technologies strengthen our ability to break down geographical distances at the cost of weakening our connections with the world immediately around us?  As clearly demonstrated through Internet communication, there is tremendous value within efficient and decentralized communication across the globe as we exchange thoughts and form connections with individuals who we may never meet in person.  At the same time, there is a clear emerging drive within American culture that seeks to regain the significance of and connections with immediate surroundings.  I enjoy knowing where my food comes from and what crops grow in particular seasons, having a map in my head that is based on the creeks and rivers rather than on the paved roads, and being aware of the cycle of the moon on any given night.  These things are important to me as I feel myself and my friends pulled further away from the natural world and increasingly immersed in the digital one.</p>
 
-<script type="text/javascript" src="http://code.jquery.com/jquery-1.6.4.min.js"></script>
+					<p>With this in mind, I’d like to propose a new time format that in one sense brings us back to the locale of home but at the same time is strongly dependent on modern technologies such as the ability to quickly geo-locate and predictably compute astronomical movements.  I’m not proposing that we replace our current time system as it provides us with the valuable ability to synchronize across geographic distances.  Rather, I want to supplement this with another time system that is solely based on the moment that the sun rises in the place that we sleep.  This time will be slightly different for me than it will be for an individual just tens of miles away though it will provide a means through which we can feel more connected to the daylight, potentially better plan our resting hours, and live healthier lives.  With this system, time is synchronized particularly for a town or region.  In a way, its uniqueness has the ability to bring neighboring people closer together.  Prior to the complete adoption of Greenwich Mean Time, some towns in the United Kingdom actually resisted the transition as they had developed local time standards that had worked and existed within their community for generations.  This is a return to that emphasis on the local.</p><br>
+
+					<p>Here is an example based on today’s date of November 3, 2014:</p>
+
+					<p>At Sunset: 5:08pm  = -13:26 (as 13 hours and 26 minutes remain until the sun rises)<br>
+Night: 9:34pm = -9:00 (as 9 hours remain until the sun rises)<br>
+Night: 12:34am = -6:00 (as 6 hours remain until the sun rises)<br>
+Sunrise: 6:34am = 0:00<br>
+Day: 9:34am = 3:00 (as it has been 3 hours since the sun rose)<br>
+Day: 12:34pm = 6:00 (as it has been 6 hours since the sun rose)<br>
+Just Before Sunset: 5:07 = 10:33 (as the day contained 10 hours and 33 minutes of sunlight)</p><br>
+
+					<p>Note that times will shift every single day of the year and the time before and after sunset will differ from day to day.  In the winter, in comparing with summer, the time just before sunset will be a smaller number and the negative time just after sunset will be a larger number.  Vice versa, the days of summer will end with a larger number and the negative time just after sunset will be a smaller number.  This is to be expected based on the earth’s spin axis at different positions in the orbit around the sun.</p>
+            		</div>
+				</div>
+            	<div id="contact">
+            	    <div class="tab-closed">
+					<p>For questions or comments contact <my-ema data-man="<chmod000" data-dom="gmail.com>"></my-ema></p> 
+            		</div>
+				</div>
+        	</div>
+		</div>
+	</div>
+<script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=false"></script>
 
 <script type="text/javascript" src="suncalc-master/suncalc.js"></script>
 

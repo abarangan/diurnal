@@ -1,6 +1,6 @@
 
 //if we're counting up or down
-var Run_direction;
+var Run_direction='';;
 var CLOCK_PHASE = {
 	NIGHT : {value: 0, name: "Night", code: "N"}, 
 	DAY: {value: 1, name: "Day", code: "D"} 
@@ -33,7 +33,7 @@ var State = '';
 var SunriseSecs;
 var SunsetSecs;
 
-
+//Date values for future sunset/rise events
 var Current_sunset;
 var Current_sunrise;
 
@@ -84,9 +84,30 @@ function location_store_exact(position) {
 	suntime_update_values(Latitude,Longitude);
 }
 
+function location_get_approximate() {
+
+	$.getJSON("http://ip-api.com/json/?callback=?", function(data) {
+		if (data != null) {
+    		$.each(data, function(k, v) {
+        		if(k == "lat")
+					Latitude = v;
+				if(k == "lon")
+					Longitude = v;
+				if(k == "city")
+					City = v;
+				if(k == "regionName")
+					State = v;
+    		});
+		}
+		suntime_update_values(Latitude,Longitude);
+	});
+}
+
+
+
 function location_update(method) {
 	if(method == LOC_TYPE.IP)
-		;//location_get_approximate();
+		location_get_approximate();
 	else if(method == LOC_TYPE.GPS) 
 		location_get_exact();
 	else if(method == LOC_TYPE.TEST) 
@@ -97,45 +118,67 @@ function location_update(method) {
 function suntime_publish() {
 
 	if(Display_type == SUN.RISE) {
-    	var hours   = Math.floor(SunriseSecs / 3600);
-    	var minutes = Math.floor((SunriseSecs - (hours * 3600)) / 60);
-    	var seconds = Math.ceil(SunriseSecs - (hours * 3600) - (minutes * 60));
+		var hours   = Math.floor(SunriseSecs / 3600);
+		var minutes = Math.floor((SunriseSecs - (hours * 3600)) / 60);
+		var seconds = Math.ceil(SunriseSecs - (hours * 3600) - (minutes * 60));
 	}
 	else if(Display_type == SUN.SET) { 
-    	var hours   = Math.floor(SunsetSecs / 3600);
-    	var minutes = Math.floor((SunsetSecs - (hours * 3600)) / 60);
-    	var seconds = Math.ceil(SunsetSecs - (hours * 3600) - (minutes * 60));
+		var hours   = Math.floor(SunsetSecs / 3600);
+		var minutes = Math.floor((SunsetSecs - (hours * 3600)) / 60);
+		var seconds = Math.ceil(SunsetSecs - (hours * 3600) - (minutes * 60));
 	}
 
-    if(Run_direction==CLOCK_PHASE.NIGHT) { 
+	if(Run_direction==CLOCK_PHASE.NIGHT) { 
 		$("#dir").html("-");
 	}
 	
 	if((Latitude != 0)&&(Longitude != 0)) {
-    	$("#sec").html(( seconds < 10 ? "0" : "" ) + seconds);
-    	$("#min").html(( minutes < 10 ? "0" : "" ) + minutes);
-    	$("#hours").html(( hours < 10 ? "0" : "" ) + hours);
-		$("#GeoText").html("Based on your location of <em>" + City + ", " + State + "</em> with a sunrise of " + time_format(Current_sunrise) + "am.");
+		$("#sec").html(( seconds < 10 ? "0" : "" ) + seconds);
+		$("#min").html(( minutes < 10 ? "0" : "" ) + minutes);
+		$("#hours").html(( hours < 10 ? "0" : "" ) + hours);
+		$("#GeoText").html("Based on the location of <em>" + City + ", " + State + "</em> with a sunrise of " + time_format(Current_sunrise) + "am.");
 	}
 }
 
+
+function suntime_calc(now, sunrise, sunset, direction) {
+	if(direction==CLOCK_PHASE.DAY) {
+		SunriseSecs = (now - sunrise) / 1000;	//in seconds
+		SunsetSecs = (sunset - now) / 1000;
+	}
+	else if(direction==CLOCK_PHASE.NIGHT) {
+		SunriseSecs = (sunrise - now) / 1000;
+		SunsetSecs = (now - sunset) / 1000;
+	}
+}
+
+
+//the cover formatting here doesn't actually work.
 function suntime_change_to_night() {
     var newimgsrc = 'images/glacier_night.jpg?' + (new Date().getTime());
     var newimg = $('#html');
     //replace the image
 	$("html").css("background", "url("+newimgsrc+") no-repeat center center fixed");
-	newimg.css({'background': 'url('+newimgsrc+')', '-webkit-background-size': 'cover', '-moz-background-size': 'cover', '-o-background-size': 'cover', 'background-size': 'cover'});
+	newimg.css({'background': 'url('+newimgsrc+')'});
+	newimg.css({'-webkit-background-size': 'cover'});
+	newimg.css({'-moz-background-size': 'cover'});
+	newimg.css({'-o-background-size': 'cover'});
+	newimg.css({'background-size': 'cover'});
 	newimg.show();
 }
 
+//the cover formatting here doesn't actually work.
 function suntime_change_to_day() {
     var newimgsrc = 'images/glacier.jpg?' + (new Date().getTime());
     var newimg = $('#html');
     //replace the image
 	$("html").css("background", "url("+newimgsrc+") no-repeat center center fixed");
-	newimg.css({'background': 'url('+newimgsrc+')', '-webkit-background-size': 'cover', '-moz-background-size': 'cover', '-o-background-size': 'cover', 'background-size': 'cover'});
+	newimg.css({'background': 'url('+newimgsrc+')'});
+	newimg.css({'-webkit-background-size': 'cover'});
+	newimg.css({'-moz-background-size': 'cover'});
+	newimg.css({'-o-background-size': 'cover'});
+	newimg.css({'background-size': 'cover'});
 	newimg.show();
-
 }
 
 //---------------------
@@ -151,14 +194,20 @@ function suntime_update_values(latitude, longitude) {
 
 	//if the sun is out now
 	if((current_time < suncalc_times.sunset)&&(current_time > suncalc_times.sunrise)) {
+
+		if(Run_direction==CLOCK_PHASE.NIGHT) {
+			//suntime_change_to_day();
+		}
+
 		Run_direction = CLOCK_PHASE.DAY;
-		suntime_change_to_day();
 	}
 	//else the sun has set
 	else {
+		
+		//suntime_change_to_night();
+	
 		Run_direction = CLOCK_PHASE.NIGHT;
-		suntime_change_to_night();
-
+		
 		//if it's before midnight, we need to look at "tomorrow's" sunrise
     	if(current_time.getHours() > 12) {
     		var tomorrow = new Date();
@@ -196,18 +245,6 @@ function suntime_check(now, sunrise, sunset, direction) {
 }
 
 
-function suntime_calc(now, sunrise, sunset, direction) {
-	if(direction==CLOCK_PHASE.DAY) {
-		SunriseSecs = (now - sunrise) / 1000;	//in seconds
-		SunsetSecs = (sunset - now) / 1000;
-	}
-	else if(direction==CLOCK_PHASE.NIGHT) {
-		SunriseSecs = (sunrise - now) / 1000;
-		SunsetSecs = (now - sunset) / 1000;
-	}
-}
-
-
 function time_format(date_val) {
 	return date_val.getHours() + ':' + date_val.getMinutes();
 }
@@ -220,16 +257,6 @@ $(document).ready(function() {
 	//get location
 	Location_method = LOC_TYPE.GPS;	//GPS, IP, TEST
 	location_update(Location_method);
-
-	//update sunrise/set values
-	//suntime_update_values(Latitude,Longitude);
-	
-	//update time to display
-	//suntime_calc(now, Current_sunrise, Current_sunset, Run_direction);
-	
-	//set display values
-	//suntime_publish();
-
 
 setInterval( function() {
 	// Create a newDate() object and extract the seconds of the current time on the visitor's
