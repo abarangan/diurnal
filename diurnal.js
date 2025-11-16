@@ -1,429 +1,439 @@
+// Diurnal Time Calculator
+// Modern refactor with improved error handling and code organization
 
-//if we're counting up or down
-var Run_direction='';;
-var CLOCK_PHASE = {
-	NIGHT : {value: 0, name: "Night", code: "N"}, 
-	DAY: {value: 1, name: "Day", code: "D"} 
-};
+const DiurnalTime = (() => {
+  // Private state
+  let state = {
+    runDirection: null,
+    displayType: null,
+    locationMethod: null,
 
-//how to determine location
-var Location_method;
-var LOC_TYPE = {
-	IP : {value: 0, name: "Approx", code: "A"}, 
-	GPS: {value: 1, name: "Precise", code: "P"},
-	TEST: {value: 2, name: "Test", code: "T"},
-};
+    // Geographic location
+    latitude: 0,
+    longitude: 0,
+    accuracy: 0,
+    city: '',
+    state: '',
 
-//are we displaying w/r/t sunrise or sunset
-var Display_type;
-var SUN = {
-	RISE : {value: 0, name: "Rise", code: "R"}, 
-	SET : {value: 1, name: "Set", code: "S"} 
-};
+    // Time values (in seconds)
+    sunriseSecs: 0,
+    sunsetSecs: 0,
 
-//Geo Location
-var Latitude=0;
-var Longitude=0;
-var Accuracy;
+    // Date values for future sunset/rise events
+    currentSunset: null,
+    currentSunrise: null,
 
-//Commmon Location
-var City = '';
-var State = '';
+    // Control flags
+    fireOnce: false,
+    updateInterval: null
+  };
 
-//Diurnal Time Values (in seconds)
-var SunriseSecs;
-var SunsetSecs;
+  // Constants
+  const CLOCK_PHASE = {
+    NIGHT: { value: 0, name: "Night", code: "N" },
+    DAY: { value: 1, name: "Day", code: "D" }
+  };
 
-//Date values for future sunset/rise events
-var Current_sunset;
-var Current_sunrise;
+  const LOC_TYPE = {
+    IP: { value: 0, name: "Approx", code: "A" },
+    GPS: { value: 1, name: "Precise", code: "P" },
+    TEST: { value: 2, name: "Test", code: "T" }
+  };
 
-function location_get_test() {
-	//test values for Santa Cruz, CA
-	Latitude = 36.9720;
-	Longitude = -122.0263;
-	City = "Santa Cruz";
-	State = "California";
-}
+  const SUN = {
+    RISE: { value: 0, name: "Rise", code: "R" },
+    SET: { value: 1, name: "Set", code: "S" }
+  };
 
+  // Test location (Santa Cruz, CA)
+  const TEST_LOCATION = {
+    latitude: 36.9720,
+    longitude: -122.0263,
+    city: "Santa Cruz",
+    state: "California"
+  };
 
-function location_getReverseGeocodingData(lat, lng) {
-    var latlng = new google.maps.LatLng(lat, lng);
-   
- 	// This is making the Geocode request
-    var geocoder = new google.maps.Geocoder();
-    geocoder.geocode({ 'latLng': latlng }, function (results, status) {
-        if (status == google.maps.GeocoderStatus.OK) {
-			var result = results[0];
-			//look for locality tag and administrative_area_level_1
+  // Private methods
+  function setTestLocation() {
+    state.latitude = TEST_LOCATION.latitude;
+    state.longitude = TEST_LOCATION.longitude;
+    state.city = TEST_LOCATION.city;
+    state.state = TEST_LOCATION.state;
+  }
 
-			for(var i=0, len=result.address_components.length; i<len; i++) {
-				var ac = result.address_components[i];
-				if(ac.types.indexOf("locality") >= 0) City = ac.long_name;
-				if(ac.types.indexOf("administrative_area_level_1") >= 0) State = ac.long_name;
-			}
-    	}
-	});
-}
-
-function location_check() {
-	if (Latitude==0) {
-		location_get_approximate();
-	}
-}
-
-function location_get_exact() {
-
-	var options = {
-  		enableHighAccuracy: false,
-  		timeout: 5000,
-  		maximumAge: 0
-	};
-    
-	if (navigator.geolocation) {
-		setTimeout(navigator.geolocation.getCurrentPosition(location_store_exact,location_get_approximate,options), 0);
-    } else { 
-       location_get_approximate();
+  function getReverseGeocodingData(lat, lng) {
+    // Use a free reverse geocoding service
+    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
+      .then(response => response.json())
+      .then(data => {
+        if (data && data.address) {
+          state.city = data.address.city || data.address.town || data.address.village || '';
+          state.state = data.address.state || '';
+        }
+            })
+        .catch(error => {
+          console.warn('Reverse geocoding failed:', error);
+          // Fallback to generic location description
+          state.city = 'Your location';
+          state.state = '';
+        });
     }
 
-	setTimeout(location_check, 5000);
+  function checkLocation() {
+    if (state.latitude === 0) {
+      getApproximateLocation();
+    }
+  }
+
+  function getExactLocation() {
+    const options = {
+      enableHighAccuracy: false,
+      timeout: 5000,
+      maximumAge: 0
+    };
+
+    if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(
+            storeExactLocation,
+            getApproximateLocation,
+            options
+          );
+        } else {
+          console.warn('Geolocation not supported');
+          getApproximateLocation();
+        }
+
+      setTimeout(checkLocation, 5000);
+    }
+
+  function storeExactLocation(position) {
+    state.latitude = position.coords.latitude;
+    state.longitude = position.coords.longitude;
+    state.accuracy = position.coords.accuracy;
+
+      // Update global coordinates for sunclock
+      updateGlobalCoordinates(state.latitude, state.longitude);
+
+      getReverseGeocodingData(state.latitude, state.longitude);
+      updateSunValues(state.latitude, state.longitude);
+
+      // Draw or redraw clock - use setTimeout to ensure globals are set
+      setTimeout(() => {
+        if (typeof sunclock_draw === 'function') {
+          sunclock_draw();
+        }
+         }, 100);
+    }
+
+  function getApproximateLocation() {
+    // Use ipapi.co as a fallback (free tier available)
+    fetch('https://ipapi.co/json/')
+      .then(response => response.json())
+      .then(data => {
+        if (data && data.latitude && data.longitude) {
+          state.latitude = data.latitude;
+          state.longitude = data.longitude;
+          state.city = data.city || '';
+          state.state = data.region || '';
+
+                  // Update global coordinates for sunclock
+                  updateGlobalCoordinates(state.latitude, state.longitude);
+
+                  updateSunValues(state.latitude, state.longitude);
+
+                  // Draw or redraw clock - use setTimeout to ensure globals are set
+                  setTimeout(() => {
+                    if (typeof sunclock_draw === 'function') {
+                      sunclock_draw();
+                       }
+                     }, 100);
+              }
+            })
+          .catch(error => {
+            console.error('IP geolocation failed:', error);
+            // Use test location as ultimate fallback
+            setTestLocation();
+            updateGlobalCoordinates(state.latitude, state.longitude);
+            updateSunValues(state.latitude, state.longitude);
+
+              // Draw or redraw clock - use setTimeout to ensure globals are set
+              setTimeout(() => {
+                if (typeof sunclock_draw === 'function') {
+                  sunclock_draw();
+                }
+              }, 100);
+            });
+    }
+
+  function updateLocation(method) {
+    if (method === LOC_TYPE.IP) {
+      getApproximateLocation();
+    } else if (method === LOC_TYPE.GPS) {
+      getExactLocation();
+    } else if (method === LOC_TYPE.TEST) {
+      setTestLocation();
+    }
+  }
+
+  function publishTime() {
+    let hours, minutes, seconds;
+
+      if (state.displayType === SUN.RISE) {
+        hours = Math.floor(state.sunriseSecs / 3600);
+        minutes = Math.floor((state.sunriseSecs - (hours * 3600)) / 60);
+        seconds = Math.ceil(state.sunriseSecs - (hours * 3600) - (minutes * 60));
+
+          if (state.runDirection === CLOCK_PHASE.NIGHT) {
+            $("#dir").html("-");
+            } else {
+              $("#dir").html("");
+            }
+        } else if (state.displayType === SUN.SET) {
+          hours = Math.floor(state.sunsetSecs / 3600);
+          minutes = Math.floor((state.sunsetSecs - (hours * 3600)) / 60);
+          seconds = Math.ceil(state.sunsetSecs - (hours * 3600) - (minutes * 60));
+
+          if (state.runDirection === CLOCK_PHASE.DAY) {
+            $("#dir").html("-");
+          } else {
+            $("#dir").html("");
+          }
+        }
+
+      if (state.latitude !== 0 && state.longitude !== 0) {
+        $("#sec").html((seconds < 10 ? "0" : "") + seconds);
+        $("#min").html((minutes < 10 ? "0" : "") + minutes);
+        $("#hours").html((hours < 10 ? "0" : "") + hours);
+
+          const locationText = state.state ? `${state.city}, ${state.state}` : state.city;
+
+        if (state.displayType === SUN.RISE) {
+          $("#GeoText").html(`Based on the location of <em>${locationText}</em> with a sunrise of ${formatTime(state.currentSunrise)}am.`);
+        } else if (state.displayType === SUN.SET) {
+          $("#GeoText").html(`Based on the location of <em>${locationText}</em> with a sunset of ${formatTime(state.currentSunset)}pm.`);
+        }
+      }
+    }
+
+  function calcTime(sunrise, sunset, direction) {
+    const now = new Date();
+
+      if (direction === CLOCK_PHASE.DAY) {
+        state.sunriseSecs = Math.floor((now - sunrise) / 1000);
+        state.sunsetSecs = Math.floor((sunset - now) / 1000);
+      } else if (direction === CLOCK_PHASE.NIGHT) {
+        state.sunriseSecs = Math.floor((sunrise - now) / 1000);
+        state.sunsetSecs = Math.floor((now - sunset) / 1000);
+      }
+
+      publishTime();
+    }
+
+  function changeBackgroundToNight() {
+    const newimgsrc = 'images/glacier_night.jpg';
+    $("html").css("background", "url(" + newimgsrc + ") no-repeat center center fixed");
+    $("html").css("background-size", "cover");
+  }
+
+  function changeBackgroundToDay() {
+    const newimgsrc = 'images/glacier.jpg';
+    $("html").css("background", "url(" + newimgsrc + ") no-repeat center center fixed");
+    $("html").css("background-size", "cover");
+  }
+
+  function updateSunValues(latitude, longitude) {
+    const currentTime = new Date();
+    let suncalcTimes = SunCalc.getTimes(currentTime, latitude, longitude);
+
+      // Handle edge cases where sunrise/sunset might be null (polar regions)
+      if (!suncalcTimes.sunrise || !suncalcTimes.sunset) {
+        console.warn('Sunrise/sunset unavailable for this location (polar region?)');
+        // Set reasonable defaults
+        state.runDirection = CLOCK_PHASE.DAY;
+        state.currentSunrise = new Date(currentTime.getFullYear(), currentTime.getMonth(), currentTime.getDate(), 6, 0, 0);
+        state.currentSunset = new Date(currentTime.getFullYear(), currentTime.getMonth(), currentTime.getDate(), 18, 0, 0);
+        return;
+      }
+
+      // Check if sun is currently out
+      if (currentTime < suncalcTimes.sunset && currentTime > suncalcTimes.sunrise) {
+        state.runDirection = CLOCK_PHASE.DAY;
+      } else {
+        state.runDirection = CLOCK_PHASE.NIGHT;
+
+          if (state.displayType === SUN.RISE) {
+            // Make sure we're looking at the next sunrise
+            if (suncalcTimes.sunrise < currentTime) {
+              const tomorrow = new Date();
+              tomorrow.setDate(tomorrow.getDate() + 1);
+                suncalcTimes = SunCalc.getTimes(tomorrow, latitude, longitude);
+              }
+            }
+
+          if (state.displayType === SUN.SET) {
+            // Make sure we're looking at the last sunset
+            if (suncalcTimes.sunset > currentTime) {
+              const yesterday = new Date();
+              yesterday.setDate(yesterday.getDate() - 1);
+              suncalcTimes = SunCalc.getTimes(yesterday, latitude, longitude);
+            }
+          }
+        }
+
+      state.currentSunrise = suncalcTimes.sunrise;
+      state.currentSunset = suncalcTimes.sunset;
+    }
+
+  function checkSunEvent(sunrise, sunset, direction) {
+    const now = new Date();
+
+      if (direction === CLOCK_PHASE.NIGHT) {
+        // Next event is sunrise
+        if (now >= sunrise) {
+          updateSunValues(state.latitude, state.longitude);
+        }
+      } else if (direction === CLOCK_PHASE.DAY) {
+        // Next event is sunset
+        if (now >= sunset) {
+          updateSunValues(state.latitude, state.longitude);
+        }
+      }
+    }
+
+  function formatTime(dateVal) {
+    let hours = dateVal.getHours();
+    let minutes = dateVal.getMinutes();
+
+      // Use 12 hour clock
+      hours = hours % 12;
+      if (hours === 0) hours = 12;
+
+      if (minutes < 10) {
+        minutes = "0" + minutes;
+        }
+
+      return hours + ':' + minutes;
+    }
+
+  function toggleRiseSet() {
+    if (state.displayType === SUN.RISE) {
+      state.displayType = SUN.SET;
+      changeBackgroundToNight();
+    } else if (state.displayType === SUN.SET) {
+      state.displayType = SUN.RISE;
+      changeBackgroundToDay();
+    }
+
+      // CRITICAL: Recalculate sun values with new display type
+      // This ensures we get the correct sunrise/sunset for the new reference point
+      updateSunValues(state.latitude, state.longitude);
+
+      // Force immediate time calculation with updated values
+      calcTime(state.currentSunrise, state.currentSunset, state.runDirection);
+    }
+
+  function handleKeyPress(e) {
+    if (!state.fireOnce) {
+      if (e.keyCode === 114 || e.charCode === 114) { // 'r'
+        toggleRiseSet();
+      }
+    }
+      state.fireOnce = true;
+    }
+
+  function handleKeyUp(e) {
+    if (e.keyCode === 82 || e.charCode === 82) { // 'R'
+      toggleRiseSet();
+    }
+      state.fireOnce = false;
+    }
+
+  function enableTouch() {
+    const getPointerEvent = (event) => {
+      return event.originalEvent.targetTouches ? event.originalEvent.targetTouches[0] : event;
+    };
+
+      const $touchArea = $('#touchArea');
+      let touchStarted = false;
+
+      $touchArea.on('touchstart mousedown', function (e) {
+        e.preventDefault();
+          touchStarted = true;
+          toggleRiseSet();
+        });
+
+      $touchArea.on('touchend mouseup touchcancel', function (e) {
+        e.preventDefault();
+          touchStarted = false;
+        });
+    }
+
+  function startUpdateLoop() {
+    state.updateInterval = setInterval(() => {
+      checkSunEvent(state.currentSunrise, state.currentSunset, state.runDirection);
+      calcTime(state.currentSunrise, state.currentSunset, state.runDirection);
+    }, 1000);
+  }
+
+  function stopUpdateLoop() {
+    if (state.updateInterval) {
+      clearInterval(state.updateInterval);
+      state.updateInterval = null;
+    }
+  }
+
+  // Public API
+  return {
+    init: function () {
+      state.displayType = SUN.RISE;
+
+        // Preload night image
+        if (document.images) {
+              const img1 = new Image();
+              img1.src = "images/glacier_night.jpg";
+            }
+
+        enableTouch();
+
+        // Setup keyboard handlers
+        document.addEventListener('keypress', handleKeyPress);
+        document.addEventListener('keyup', handleKeyUp);
+
+        // Get location
+        state.locationMethod = LOC_TYPE.GPS;
+        updateLocation(state.locationMethod);
+
+        // Start update loop
+        startUpdateLoop();
+      },
+
+      destroy: function () {
+        stopUpdateLoop();
+        document.removeEventListener('keypress', handleKeyPress);
+        document.removeEventListener('keyup', handleKeyUp);
+      },
+
+    // Expose state for sunclock.js
+    getState: function () {
+      return {
+        latitude: state.latitude,
+        longitude: state.longitude
+      };
+    }
+  };
+})();
+
+// Initialize when DOM is ready
+$(document).ready(function () {
+  DiurnalTime.init();
+});
+
+// Expose globals for sunclock.js compatibility
+window.Latitude = 0;
+window.Longitude = 0;
+
+// Helper to update globals
+function updateGlobalCoordinates(lat, lon) {
+  window.Latitude = lat;
+  window.Longitude = lon;
 }
-
-function location_store_exact(position) {
-	Latitude =  position.coords.latitude;
-	Longitude = position.coords.longitude;
-	Accuracy = position.coords.accuracy;
-
-	//get City/State information based on geo
-	location_getReverseGeocodingData(Latitude,Longitude);
-
-	//update display
-	suntime_update_values(Latitude,Longitude);
-
-	//draw clock
-	sunclock_draw();
-}
-
-function location_get_approximate() {
-
-	$.getJSON("http://ip-api.com/json/?callback=?", function(data) {
-		if (data != null) {
-    		$.each(data, function(k, v) {
-        		if(k == "lat")
-					Latitude = v;
-				if(k == "lon")
-					Longitude = v;
-				if(k == "city")
-					City = v;
-				if(k == "regionName")
-					State = v;
-    		});
-		}
-
-		//get City/State information based on geo
-		location_getReverseGeocodingData(Latitude,Longitude);
-
-		suntime_update_values(Latitude,Longitude);
-
-		//draw clock
-		sunclock_draw();
-
-	});
-}
-
-
-
-function location_update(method) {
-	if(method == LOC_TYPE.IP)
-		location_get_approximate();
-	else if(method == LOC_TYPE.GPS) 
-		location_get_exact();
-	else if(method == LOC_TYPE.TEST) 
-		location_get_test();
-}
-
-
-function suntime_publish() {
-
-	if(Display_type == SUN.RISE) {
-		var hours   = Math.floor(SunriseSecs / 3600);
-		var minutes = Math.floor((SunriseSecs - (hours * 3600)) / 60);
-		var seconds = Math.ceil(SunriseSecs - (hours * 3600) - (minutes * 60));
-
-		if(Run_direction==CLOCK_PHASE.NIGHT) { 
-			$("#dir").html("-");
-		}
-		else {
-			$("#dir").html("");
-		}
-	}
-	else if(Display_type == SUN.SET) { 
-		var hours   = Math.floor(SunsetSecs / 3600);
-		var minutes = Math.floor((SunsetSecs - (hours * 3600)) / 60);
-		var seconds = Math.ceil(SunsetSecs - (hours * 3600) - (minutes * 60));
-
-		if(Run_direction==CLOCK_PHASE.DAY) { 
-			$("#dir").html("-");
-		}
-		else {
-			$("#dir").html("");
-		}
-	}
-	
-	if((Latitude != 0)&&(Longitude != 0)) {
-		$("#sec").html(( seconds < 10 ? "0" : "" ) + seconds);
-		$("#min").html(( minutes < 10 ? "0" : "" ) + minutes);
-		$("#hours").html(( hours < 10 ? "0" : "" ) + hours);
-
-
-
-		if(Display_type == SUN.RISE) {
-			$("#GeoText").html("Based on the location of <em>" + City + ", " + State + "</em> with a sunrise of " + time_format(Current_sunrise) + "am.");
-		}
-		else if(Display_type == SUN.SET) {
-			$("#GeoText").html("Based on the location of <em>" + City + ", " + State + "</em> with a sunset of " + time_format(Current_sunset) + "pm.");
-		}
-	}
-}
-
-function suntime_calc(sunrise, sunset, direction) {
-	var now = new Date();
-
-	if(direction==CLOCK_PHASE.DAY) {
-		SunriseSecs = Math.floor((now - sunrise) / 1000);	//in seconds
-		SunsetSecs = Math.floor((sunset - now) / 1000);
-	}
-	else if(direction==CLOCK_PHASE.NIGHT) {
-		SunriseSecs = Math.floor((sunrise - now) / 1000);
-		SunsetSecs = Math.floor((now - sunset) / 1000);
-	}
-
-	suntime_publish();
-}
-
-function suntime_change_to_night() {
-    //var newimgsrc = 'images/glacier_night.jpg?' + (new Date().getTime());
-	var newimgsrc = 'images/glacier_night.jpg';
-    //replace the image
-	$("html").css("background", "url("+newimgsrc+") no-repeat center center fixed");
-	$("html").css("background-size", "cover");
-}
-
-function suntime_change_to_day() {
-    //var newimgsrc = 'images/glacier.jpg?' + (new Date().getTime());
-	var newimgsrc = 'images/glacier.jpg';
-    //replace the image
-	$("html").css("background", "url("+newimgsrc+") no-repeat center center fixed");
-	$("html").css("background-size", "cover");
-}
-
-//---------------------
-//Function: suntime_update_sun_values
-//Purpose: determine proper sunrise/set times and set run_direction global
-//Inputs: latitude, longitude of location
-//Returns: Sunrise and Sunset times within SunCalc Object
-//---------------------
-function suntime_update_values(latitude, longitude) {
-	var current_time = new Date();
-	var suncalc_times = SunCalc.getTimes(current_time, latitude, longitude);
-	var datenow;
-	var daterise;
-	var dateset;
-
-	//if the sun is out now
-	if((current_time < suncalc_times.sunset)&&(current_time > suncalc_times.sunrise)) {
-
-		if(Run_direction==CLOCK_PHASE.NIGHT) {
-			//suntime_change_to_day();
-		}
-
-		Run_direction = CLOCK_PHASE.DAY;
-	}
-	//else the sun has set
-	else {
-		
-		//suntime_change_to_night();
-	
-		Run_direction = CLOCK_PHASE.NIGHT;
-
-		if(Display_type == SUN.RISE) {
-			//let's make sure we're looking at the next sunrise
-    		if(suncalc_times.sunrise < current_time) {
-    			var tomorrow = new Date();
-    			tomorrow.setDate(tomorrow.getDate() + 1);
-    			suncalc_times = SunCalc.getTimes(tomorrow, latitude, longitude);
-			}
-		}
-
-		if(Display_type == SUN.SET) {
-			//let's make sure we're looking at the last sunset
-    		if(suncalc_times.sunset > current_time) {
-    			var tomorrow = new Date();
-    			tomorrow.setDate(tomorrow.getDate() - 1);
-    			suncalc_times = SunCalc.getTimes(tomorrow, latitude, longitude);
-			}
-		}
-
-	}
-
-	Current_sunrise = suncalc_times.sunrise;
-	Current_sunset = suncalc_times.sunset;
-
-	datenow = current_time.getDate();
-	daterise = Current_sunrise.getDate();
-	dateset = Current_sunset.getDate();
-
-}	
-
-
-function suntime_check(sunrise, sunset, direction) {
-	var now = new Date();
-
-	if(direction==CLOCK_PHASE.NIGHT) {
-		//next event is sun will rise, did that happen?
-		if(now >= sunrise) {
-			console.log("Updating values, we think the sun has risen")
-			//verify location?
-			//location_update(Location_method);
-
-			//update sun values
-			suntime_update_values(Latitude,Longitude);
-		}
-	}
-	else if(direction==CLOCK_PHASE.DAY) {
-		console.log("direction==CLOCK_PHASE.DAY")
-		//next event is sun will set, did that happen?
-		if(now >= sunset) {
-			console.log("Updating values, we think the sun has set")
-			//verify location?
-			//location_update(Location_method);
-
-			//update sun values
-			suntime_update_values(Latitude,Longitude);
-		}			
-	}
-}
-
-
-function time_format(date_val) {
-	var hours = date_val.getHours();
-	var minutes = date_val.getMinutes();
-
-	//Just use 12 hour clock
-	hours = hours % 12;
-
-	if(minutes < 10)
-		minutes = "0" + minutes;
-
-	return hours + ':' + minutes;
-}
-
-function toggle_rise_set() {
-	if (Display_type==SUN.RISE) {
-		Display_type = SUN.SET;
-		suntime_change_to_night();
-	}
-	else if (Display_type==SUN.SET) {
-		Display_type = SUN.RISE;
-		suntime_change_to_day();
-	}
-
-	//update DT
-	suntime_update_values(Latitude,Longitude);
-	suntime_calc(Current_sunrise, Current_sunset, Run_direction);
-}
-
-var Fire_once = false;
-
-document.onkeypress = key_press_handler;
-function key_press_handler(e)
-{
-	var now = new Date();
-  	
-	if (!e) e=window.event;
-	
-	if(Fire_once==false)
-	{
-		if((e.keyCode==114)||(e.charCode==114)) { 	// 'r'
-			toggle_rise_set();
-		}
-	}
-
-	Fire_once = true;
-}
-
-document.onkeyup = key_up_handler;
-function key_up_handler(e)
-{
-  	if (!e) e=window.event;
-
-	if((e.keyCode==82)||(e.charCode==82)) { 	// 'r'
-		toggle_rise_set();
-	}
-	
-	Fire_once = false;	
-}
-
-
-function enable_touch() {
-	var getPointerEvent = function(event) {
-	    return event.originalEvent.targetTouches ? event.originalEvent.targetTouches[0] : event;
-	};
-
-	var $touchArea = $('#touchArea'),
-	    touchStarted = false, // detect if a touch event is sarted
-	    currX = 0,
-	    currY = 0,
-	    cachedX = 0,
-	    cachedY = 0;
-
-	$touchArea.on('touchstart mousedown',function (e){
-    	e.preventDefault(); 
-    	
-		var pointer = getPointerEvent(e);
-    
-		// caching the current x
-    	cachedX = currX = pointer.pageX;
-    
-		// caching the current y
-    	cachedY = currY = pointer.pageY;
-    
-		// a touch event is detected      
-    	touchStarted = true;
-    	toggle_rise_set();
-	});
-
-	$touchArea.on('touchend mouseup touchcancel',function (e){
-    	e.preventDefault();
-    
-		// here we can consider finished the touch event
-    	touchStarted = false;
-    	toggle_rise_set();
-	});
-}
-
-$(document).ready(function() {
-	var now = new Date();
-	Display_type = SUN.RISE;
-
-	//preload night image
-	if (document.images) {
-	    img1 = new Image();
-	    img1.src = "images/glacier_night.jpg";
-	}
-
-	enable_touch();
-
-	//get location
-	Location_method = LOC_TYPE.GPS;	//GPS, IP, TEST
-	location_update(Location_method);
-
-	setInterval( function() {
-		//do we need to update sun data?
-		suntime_check(Current_sunrise, Current_sunset, Run_direction); 
-
-		//update DT
-		suntime_calc(Current_sunrise, Current_sunset, Run_direction);
-    },1000);
-});	
-
