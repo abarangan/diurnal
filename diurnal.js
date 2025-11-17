@@ -203,7 +203,7 @@ const DiurnalTime = (() => {
       if (state.latitude !== 0 && state.longitude !== 0) {
         $("#sec").html((seconds < 10 ? "0" : "") + seconds);
         $("#min").html((minutes < 10 ? "0" : "") + minutes);
-        $("#hours").html((hours < 10 ? "0" : "") + hours);
+        $("#hours").html(hours);
 
           const locationText = state.state ? `${state.city}, ${state.state}` : state.city;
 
