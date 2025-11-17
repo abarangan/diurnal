@@ -333,13 +333,10 @@ const DiurnalTime = (() => {
     }
 
   function handleKeyPress(e) {
-    if (!state.fireOnce) {
-      if (e.keyCode === 114 || e.charCode === 114) { // 'r'
-        toggleRiseSet();
-      }
+    if (e.keyCode === 114 || e.charCode === 114) { // 'r'
+      toggleRiseSet();
     }
-      state.fireOnce = true;
-    }
+  }
 
   function handleKeyUp(e) {
     if (e.keyCode === 82 || e.charCode === 82) { // 'R'
@@ -396,8 +393,7 @@ const DiurnalTime = (() => {
         enableTouch();
 
         // Setup keyboard handlers
-        document.addEventListener('keypress', handleKeyPress);
-        document.addEventListener('keyup', handleKeyUp);
+      document.addEventListener('keypress', handleKeyPress);
 
         // Get location
         state.locationMethod = LOC_TYPE.GPS;
