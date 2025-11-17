@@ -289,9 +289,10 @@ my-ema::before {
         		</ul>
             	<div id="exp">
 					<div class="tab-closed">
-                  <p>Diurnal Time is calculated with respect to the sunrise in the place you are located. During the day, DT will be a
-                    positive number representing the number of minutes it's been since the sunrise. After the sun sets, DT will be a
-                    negative number representing the number of minutes until the sun rises again. These numbers are unique to each day and
+                  <p>Diurnal Time (DT) is calculated with respect to the sunrise in the place you are located. During the day, DT will be
+                    a
+                    positive number representing how long it has been since the sunrise. After the sun sets, DT will be a
+                    negative number representing how long before the sun rises again. These numbers are unique to each day and
                     unique to every location.</p>
                   <p>If you find yourself thinking more about the ends of days rather than the beginnings, you can press the 'r' key on
                     your keyboard or touch/click on the clock in order to display Diurnal Time with respect to sunset.</p>
@@ -299,59 +300,40 @@ my-ema::before {
             	</div>
             	<div id="motiv">
 					<div class="tab-closed">
-                  <p>We live today in a world filled with legacy. Some of those things we borrow from history make our lives easier as
-                    they prevent us from needing to reinvent techniques and processes. Other elements pose serious challenges to our daily
-                    lives as the world we live in today is vastly different from the world that existed just 10 years ago. This is evident
-                    within everything from the ways we work, to our methods of communication, to the foods we eat. The technologies of
-                    modern life have emphasized and expedited the dynamic and ever-changing aspects of human culture.</p>
+          <p>What compromises do we make by governing our lives within Coordinated Universal Time (UTC)? Modern technologies have
+            collapsed geographical distance and made it effortless to have a conversation with someone across the globe at the
+            cost of weakening our connections with the world immediately around us. The glow of our screens eclipses the rhythms
+            of the earth and the light of the moon.</p>
 
-          <p>One important piece of that legacy is our concept of time. For centuries, noon (or midday) was the time at which the
-            sun crossed the meridian and appeared at its highest elevation in the sky. Slowly, we lost this sun-based time system
-            as we made compromises for precision and synchronization. In 1847, Greenwich Mean Time (GMT) became a standard across
-            Great Britain with the goal of synchronizing clocks for maritime and railroad use—essentially, through capitalist
-            motivations. This eventually became a standard for time that was used all over the world. In 1960, an international
-            communications committee defined Coordinated Universal Time (UTC) in an attempt to improve precision by leveraging the
-            newly-invented caesium atomic clock rather than basing time on astronomical observations. All of the time zones on
-            Earth are now based with respect to Universal Time.</p>
-
-          <p>What are the compromises that we make as we govern our lives within the existing time standards? What are the ways
-            that certain technologies strengthen our ability to break down geographical distances at the cost of weakening our
-            connections with the world immediately around us? As demonstrated through Internet communication, there is tremendous
-            value within efficient and decentralized communication across the globe as we exchange thoughts and form connections
-            with individuals who we may never meet in person. At the same time, there are obvious benefits within regaining the
-            significance of and connections with immediate surroundings. I enjoy knowing where my food comes from and what crops
-            grow in particular seasons, having a map in my head that is based on the creeks and rivers rather than on the
-            Google-mapped roads, and being aware of the cycle of the moon on any given night. These things are important to me as
-            I feel myself and my friends pulled further away from the natural world and increasingly immersed in the digital one.
+<p>With the hope of reclaiming a sense of presence, I propose a time format that brings us back to a kind of sun-based
+  simplicity
+  while still relying on modern capabilities- precise geo-location and the ability to compute predictable astronomical
+  motions. I’m not suggesting that we replace our current time system; UTC is invaluable for synchronizing life across
+  distance. Instead, I want to supplement it with a local system grounded entirely in the moment the sun rises at our
+  location.
           </p>
 
-          <p>With this in mind, I'd like to propose a new time format that in one sense brings us back to sun-based simplicity but
-            at the same time is strongly dependent on modern technologies such as the ability to quickly geo-locate and
-            predictably compute astronomical movements. I'm not proposing that we replace our current time system as it provides
-            us with the valuable ability to synchronize across distances. Rather, I want to supplement this with another time
-            system that is solely based on the moment that the sun rises in the place that we sleep. This time will be slightly
-            different for me than it will be for an individual just tens of miles away though it will provide a means through
-            which we can feel more connected to the daylight, potentially better plan our resting hours, and live healthier lives.
-            With this system, time is synchronized particularly for a town or region. In a way, its uniqueness has the ability to
-            bring neighboring people closer together. Prior to the complete adoption of Greenwich Mean Time, some towns in the
-            United Kingdom actually resisted the transition as they had developed local time standards that had worked and existed
-            within their community for generations. This is a return to that emphasis on the local.</p><br>
+          <p>In this format, time resets to 0:00 at sunrise. Positive time marks the hours that have passed since sunrise;
+            negative time marks the hours remaining until the next sunrise. This time will differ slightly even between people
+            living just tens of miles apart, yet that very localization encourages a deeper connection to daylight, more intuitive
+            planning of rest, and a healthier alignment with natural cycles. Its uniqueness offers a shared rhythm across a town
+            or region. Before the full adoption of Greenwich Mean Time, communities in the United Kingdom maintained local solar
+            times that had guided daily life for generations. This idea is, in a way, a return to an emphasis on the local.</p>
+          <br>
 
-          <p>Here is an example based on today's date of November 3, 2014:</p>
+          <p>Here is how Diurnal Time works in practice based on November 3, 2014:</p>
 
-          <p>At Sunset: 5:08pm PST = -13:26 (as 13 hours and 26 minutes remain until the sun rises)<br>
+          <p>At Sunset: 5:08pm PST = -13:26 DT (as 13 hours and 26 minutes remain until the sun rises)<br>
 Night: 9:34pm PST = -9:00 DT (as 9 hours remain until the sun rises)<br>
 Night: 12:34am PST = -6:00 DT (as 6 hours remain until the sun rises)<br>
 Sunrise: 6:34am PST = 0:00 DT<br>
 Day: 9:34am PST = 3:00 DT (as it has been 3 hours since the sun rose)<br>
 Day: 12:34pm PST = 6:00 DT (as it has been 6 hours since the sun rose)<br>
-Just Before Sunset: 5:07 PST = 10:33 DT (as the day contained 10 hours and 33 minutes of sunlight)</p><br>
+Just Before Sunset: 5:07 PST = 10:33 DT (as the day contained 10 hours and 33 minutes of sunlight)</p>
 
-          <p>Note that times will shift every single day of the year and the time before and after sunset will differ from day to
-            day. In the winter, in comparing with summer, the time just before sunset will be a smaller number and the negative
-            time just after sunset will be a larger number. Vice versa, the days of summer will end with a larger number and the
-            negative time just after sunset will be a smaller number. This is to be expected based on the earth's spin axis at
-            different positions in the orbit around the sun.</p>
+          <p>Because sunrise and sunset shift each day, these numbers shift as well. The final daylight value is smaller in winter
+            and larger in summer, and the nighttime negative values stretch longer or shorter depending on the season. These
+            changes are simply reflections of the earth’s tilted axis as we move through the year.</p>
             		</div>
 				</div>
             	<div id="contact">
