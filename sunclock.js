@@ -51,6 +51,10 @@ const SunClock = (() => {
     function initializeDrawing() {
         state.r = Raphael("holder", 600, 600);
         
+        // Set viewBox to crop to just the visible sundial area (160x160 centered at 300,300)
+        state.r.canvas.setAttribute('viewBox', '220 220 160 160');
+        state.r.canvas.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+        
         const param = { stroke: "#fff", "stroke-width": 50 };
 
         // Custom attribute for minute hand

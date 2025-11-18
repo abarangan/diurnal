@@ -39,7 +39,6 @@ body{
 	 font:bold 12px Arial, Helvetica, sans-serif;
 	 margin:0;
 	 padding:0;
-	 min-width:960px;
 }
 
 a { 
@@ -76,27 +75,69 @@ h2, p {
 @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');
 
 .container {
-	width: 960px; 
+	max-width: 1040px; 
+	width: calc(100% - 40px); 
 	position:relative;
-	top:150px; 
-	margin: 0 auto; 
-	overflow: hidden;
+	margin: 150px auto 60px; 
 }
 
 .clock {
-	width:800px; 
-	height:180px; 
+	width:100%; 
+	max-width:860px; 
 	margin:0 auto; 
-	padding:10px; 
+	padding:20px; 
 	border:1px solid #fcfcfc; 
 	color:#f8f8f8;
 	cursor: pointer;
+	box-sizing:border-box;
+	position: relative;
+}
+
+#GeoText {
+	margin: 0 0 15px 0;
+	padding: 0;
+	font-size: 14px;
+	line-height: 1.4;
+}
+
+#demo {
+	margin: 0;
+	padding: 0;
+	display: none;
+}
+
+.time-layout {
+	display:flex;
+	flex-wrap:nowrap;
+	align-items:center;
+	justify-content:space-between;
+	gap:10px;
+}
+
+.time-info {
+	flex:1 1 auto;
+	min-width:260px;
+	max-width:500px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.sunclock-wrapper {
+	flex:0 0 160px;
+	max-width:160px;
+	display:flex;
+	justify-content:center;
+	align-items:center;
+	margin-left: auto;
 }
 
 .tab_contain {
-	width:720px; 
+	width:100%; 
+	max-width:720px;
 	margin:0 auto; 
 	padding:0px; 
+	box-sizing:border-box;
 }
 
 #tabs { 
@@ -142,11 +183,18 @@ h2, p {
 }
 
 #holder {
-    position: absolute;
-    top: -200px;
-	left: 485px;
-    width: 120px;
-    height: 120px;
+    position: relative;
+    width: 160px;
+    height: 160px;
+    max-width: 100%;
+    margin: 0 auto;
+    overflow: visible;
+}
+
+#holder svg {
+	width: 160px !important;
+	height: 160px !important;
+	display: block;
 }
 
 #Date { 
@@ -157,20 +205,29 @@ h2, p {
 }
 
 ul { 
-	width:800px; 
-	margin:0px 0px 0px -80px; 
-	padding:0px; 
+	width:100%; 
+	margin:0; 
+	padding:0; 
 	list-style:none; 
 	text-align:center; 
 }
 
+ul#suntime { 
+	display:flex;
+	flex-wrap:nowrap;
+	justify-content:center;
+	align-items:center;
+	gap:0;
+}
+
 ul#suntime li { 
-	display:inline; 
-	font-size:10em; 
+	display:inline-flex; 
+	font-size:clamp(7.5rem, 9vw, 7.5rem); 
 	text-align:center; 
 	font-family: 'Elms Sans', 'Bebas Neue', Helvetica, sans-serif;
 	font-weight: 400;
 	text-shadow:0 0 0px #00c6ff; 
+	line-height: 1;
 }
 
 ul#textarea li { 
@@ -187,7 +244,7 @@ ul#textarea li {
 	animation:mymove 1s ease infinite;
 	padding-left:5px; 
 	padding-right:5px;
-	font-size: 5rem !important;
+	font-size: clamp(2.25rem, 6vw, 4rem) !important;
 	vertical-align: 0.25em;
 	line-height: 1;
 }
@@ -225,21 +282,66 @@ my-ema::before {
 	margin-top: 10px;
 }
 
-@media (max-width: 960px) {
-	body {
-		min-width: 100%;
+@media (min-width: 961px) {
+	ul#suntime {
+		margin-left: 200px;
 	}
-	.container {
-		width: 100%;
-		padding: 0 20px;
-		box-sizing: border-box;
+}
+
+
+@media (max-width: 768px) {
+	.time-layout {
+		flex-direction:column;
+		align-items:center;
+		gap:20px;
 	}
-	.clock, .tab_contain {
+	.time-info {
 		width: 100%;
-		max-width: 800px;
+		max-width: 100%;
+	}
+	.sunclock-wrapper {
+		width: auto;
+		max-width: 100%;
+		flex: 0 0 auto;
+		margin-left: 0;
+		justify-content: center;
+	}
+	#holder {
+		max-width: 100%;
+		width: 160px;
+		height: 160px;
+		margin: 0 auto;
+	}
+	ul#suntime {
+		flex-wrap:wrap;
+		justify-content:center;
 	}
 	ul#suntime li {
-		font-size: 8em;
+		font-size: clamp(6rem, 10vw, 10rem) !important;
+	}
+	.point {
+		font-size: clamp(1.6rem, 6vw, 2.8rem) !important; /* Reduced by ~30% from 2.25rem to 1.6rem base */
+	}
+}
+
+@media (max-width: 480px) {
+	.clock {
+		padding: 5px;
+	}
+	ul#suntime li {
+		font-size: clamp(5rem, 10vw, 8rem) !important;
+	}
+	.point {
+		font-size: clamp(1.4rem, 7vw, 2.4rem) !important;
+	}
+}
+
+@media (max-width: 360px) {
+	ul#suntime li {
+		font-size: clamp(8rem, 10vw, 8rem);
+	}
+	.point {
+		font-size: clamp(3rem, 6.5vw, 2rem) !important;
 	}
 }
 </style>
@@ -253,7 +355,7 @@ my-ema::before {
 <script src="https://cdn.jsdelivr.net/npm/suncalc@1.9.0/suncalc.js"></script>
 
 <!-- Raphael for drawing -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/raphael/2.3.0/raphael.min.js"></script>
+<script src="./raphael-min.js"></script>
 
 <script type="text/javascript" src="./diurnal.js"></script>
 <script src="./sunclock.js"></script>
@@ -275,18 +377,23 @@ my-ema::before {
 
 	<div class="container">
 		<div class="clock" id="touchArea">
-			<p id="demo"></p>
-			<p id="GeoText"></p>
-			
-    <ul id="suntime">
-      <li id="dir"> </li>
-      <li id="hours"> </li>
-          <li class="point">:</li>
-          <li id="min"> </li>
-        <li class="point">:</li>
-        <li id="sec"> </li>
-        </ul>
-			<div id="holder"></div>
+      <p id="demo"></p>
+      <p id="GeoText"></p>
+      <div class="time-layout">
+        <div class="time-info">
+          <ul id="suntime">
+            <li id="dir"> </li>
+            <li id="hours"> </li>
+            <li class="point">:</li>
+            <li id="min"> </li>
+            <li class="point">:</li>
+            <li id="sec"> </li>
+          </ul>
+        </div>
+        <div class="sunclock-wrapper">
+          <div id="holder"></div>
+        </div>
+        </div>
 		</div>
 	
 		<div class="tab_contain">
@@ -311,7 +418,7 @@ my-ema::before {
 					<div class="tab-closed">
           <p>TL;DR: Maximize your daylight. Get home before dark.</p><br>
           <p>What compromises do we make by governing our lives within Coordinated Universal Time (UTC)? Modern technologies have
-            collapsed geographical distance and made it effortless to have a conversation with someone across the globe at the
+            collapsed geographical distance and made it effortless to have a conversation with someone across the world at the
             cost of weakening our connections with the world immediately around us. The glow of our screens eclipses the rhythms
             of the earth and the light of the moon.</p>
 
