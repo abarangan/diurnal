@@ -208,9 +208,9 @@ const DiurnalTime = (() => {
           const locationText = state.state ? `${state.city}, ${state.state}` : state.city;
 
         if (state.displayType === SUN.RISE) {
-          $("#GeoText").html(`Based on the location of <em>${locationText}</em> with a sunrise of ${formatTime(state.currentSunrise)}am.`);
+          $("#GeoText").html(`Based on the location of <em>${locationText}</em><br> with a sunrise of ${formatTime(state.currentSunrise)}am.`);
         } else if (state.displayType === SUN.SET) {
-          $("#GeoText").html(`Based on the location of <em>${locationText}</em> with a sunset of ${formatTime(state.currentSunset)}pm.`);
+          $("#GeoText").html(`Based on the location of <em>${locationText}</em><br> with a sunset of ${formatTime(state.currentSunset)}pm.`);
         }
       }
     }
